@@ -215,17 +215,18 @@ void Board::event()
 	if(Mouse::isButtonPressed(Mouse::Left))
 	{
 		static bool inMove = 0;
+		Vector2i pos = Mouse::getPosition(*wnd);
+		if(pos.x<20||pos.x>H-20||pos.y<20||pos.y>H-20) return;
 		if(!inMove)
 		{
-			Vector2i pos = Mouse::getPosition(*wnd);
+
 			setPosition((pos.x-BDR)/80, (pos.y-BDR)/80);
 			cout <<pos.x <<" -- " <<pos.y <<endl;
 			inMove = 1;
-			sleep(milliseconds(100));
+			sleep(milliseconds(150));
 		}
 		else
 		{
-			Vector2i pos = Mouse::getPosition(*wnd);
 			inMove=0;
 			changed=1;
 		}
