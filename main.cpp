@@ -23,10 +23,11 @@ class Board
 	Texture _board, _PawnW, _RookW, _BishopW, _KingW, _KnightW, _QueenW,
 	_PawnB, _RookB, _BishopB, _KingB, _KnightB, _QueenB;
 	bool setPosition(int, int);
-	void move(int , int, int, int);
-	void replase(int , int, int, int);
-	bool ifWhite(int ,int);
+	void move(int, int, int, int);
+	void replase(int, int, int, int);
+	bool ifWhite(int, int);
 	int changed;
+	bool Check;
 public:
 	Board(RenderWindow *);
 	~Board();
@@ -45,6 +46,7 @@ int main()
 
 
 	Board brd(&app);
+	app.clear(Color::Black);
 	while(app.isOpen())
 	{
 		Event event;
@@ -56,7 +58,6 @@ int main()
 				if(event.key.code == Keyboard::Q)
 					app.close();
 		}
-		//app.clear(Color::Black);
 
 		brd.draw();
 		brd.event();
@@ -129,7 +130,7 @@ void Board::draw()
 {
 	if(changed)
 	{
-		wnd->clear(Color::Black);
+		//wnd->clear(Color::Black);
 		wnd->draw(board);
 		for(int i=0; i<8; i++)
 			for(int j=0; j<8; j++)
@@ -212,10 +213,10 @@ void Board::init()
 
 void Board::event()
 {
+	static bool inMove = 0;
+	static int x1, y1, x2, y2;
 	if(Mouse::isButtonPressed(Mouse::Left))
 	{
-		static bool inMove = 0;
-		static int x1, y1, x2, y2;
 		Vector2i pos = Mouse::getPosition(*wnd);
 		if(pos.x<20||pos.x>H-20||pos.y<20||pos.y>H-20) return;
 		if(!inMove)
@@ -236,6 +237,11 @@ void Board::event()
 			inMove=0;
 			changed=1;
 		}
+	}
+	else if(Mouse::isButtonPressed(Mouse::Right))
+	{
+		inMove=0;
+		changed=1;
 	}
 
 }
@@ -264,134 +270,120 @@ void Board::move(int x1, int y1, int x2, int y2)
 	{
 		if(brd[x2][y2]==Piece::Free)
 		{
-			if(y2==0)
-			{
-				brd[x2][y2]=Piece::BishopW;
-				brd[x1][y1]=Piece::Free;
-			}
-			else if(y1==y2 && ((x1==x2+1)||(x1==x2-1)))
+			if(y1==y2 && ((x1==x2+1)||(x1==x2-1)))
 				replase(x1, y1, x2, y2);
 			else if(x1==x2 && ((y1==y2+1)||(y1==y2+2)) && (y1==6))
 				replase(x1, y1, x2, y2);
 			else if(x1==x2 && (y1==y2+1))
 				replase(x1, y1, x2, y2);
 		}
-		else
-		{
-			if(((x1 == x2-1)||(x1 == x2+1)) && (y1 ==y2+1)&& !ifWhite(x2, y2))
-			{
-				if(y2==0&&brd[x2][y2]!=Piece::Free)
-				{
-					brd[x2][y2]=Piece::BishopW;
-					brd[x1][y1]=Piece::Free;
-				}
-				else
-					replase(x1, y1, x2, y2);
-			}
-		}
+		else if(((x1 == x2-1)||(x1 == x2+1)) && (y1 ==y2+1)&& !ifWhite(x2, y2)) replase(x1, y1, x2, y2);
 	}
-	else if (brd[x1][y1] == Piece::PawnB) //Implemet fook and replace
+	else if(brd[x1][y1] == Piece::PawnB) //Implemet fook and replace
 	{
 		if(brd[x2][y2]==Piece::Free)
 		{
-			if(y2==7)
-			{
-				brd[x2][y2]=Piece::BishopB;
-				brd[x1][y1]=Piece::Free;
-			}
-			else if(y1==y2 && ((x1==x2-1)||(x1==x2+1))) //x move
+			if(y1==y2 && ((x1==x2-1)||(x1==x2+1))) //x move
 				replase(x1, y1, x2, y2);
 			else if(x1==x2 && ((y1==y2-1)||(y1==y2-2)) && (y1==1)) //first y move
 				replase(x1, y1, x2, y2);
 			else if(x1==x2 && (y1==y2-1)) //y move
 				replase(x1, y1, x2, y2);
 		}
-		else
-		{
-			if(((x1 == x2+1)||(x1 == x2-1)) && (y1 ==y2-1) && ifWhite(x2, y2))
-			{
-				if(y2==7&&brd[x2][y2]!=Piece::Free) //last move
-				{
-					brd[x2][y2]=Piece::BishopB;
-					brd[x1][y1]=Piece::Free;
-				}
-				else
-					replase(x1, y1, x2, y2);
-			}
-		}
+		else if(((x1 == x2+1)||(x1 == x2-1)) && (y1 ==y2-1) && ifWhite(x2, y2)) replase(x1, y1, x2, y2);
+
 	}
 	else if (brd[x1][y1] == Piece::KnightW)
 	{
-		if (((abs(x1-x2)==2 && abs(y1-y2)==1)||(abs(x1-x2)==1 && abs(y1-y2)==2))&&
+		if(((abs(x1-x2)==2 && abs(y1-y2)==1)||(abs(x1-x2)==1 && abs(y1-y2)==2))&&
 				(brd[x2][y2]==Piece::Free ||!ifWhite(x2, y2)))
 			replase(x1, y1, x2, y2);
 	}
-	else if (brd[x1][y1] == Piece::KnightB)
+	else if(brd[x1][y1] == Piece::KnightB)
 	{
-		if (((abs(x1-x2)==2 && abs(y1-y2)==1)||(abs(x1-x2)==1 && abs(y1-y2)==2))&&
+		if(((abs(x1-x2)==2 && abs(y1-y2)==1)||(abs(x1-x2)==1 && abs(y1-y2)==2))&&
 				(brd[x2][y2]==Piece::Free || ifWhite(x2, y2)))
 			replase(x1, y1, x2, y2);
 	}
-	else if (brd[x1][y1] == Piece::BishopW)
+	else if(brd[x1][y1] == Piece::BishopW)
 	{
-		if (abs(x1 - x2) == abs(y1 - y2))
+		if(abs(x1 - x2) == abs(y1 - y2))
 		{
 			int xI = (x2-x1) / (abs(x2-x1));
 			int yI = (y2-y1) / (abs(y2-y1));
 			cout <<xI <<"\t--\t" <<yI <<" " <<abs(x1 - x2) <<"\t--\t" <<abs(y1 - y2) <<endl;
-			for (int i = 1; i <= abs(x1 - x2); i++)
+			int i;
+			for (i = 1; i <= abs(x1 - x2); i++)
 			{
 
 				if (brd[x1 + xI*i][y1 + yI*i]!=Piece::Free) break;
 				if (brd[x1 + xI*i][y1 + yI*i]==Piece::Free && i==abs(x1-x2)){replase(x1, y1, x2, y2); return;} //free space
 			}
-//			if (brd[x2][y2] == Piece::Free || !ifWhite(x2, y2))	{replase(x1, y1, x2, y2); return;}
+			if(brd[x1 + xI*i][y1 + yI*i]!=Piece::Free && i==abs(x1-x2) && !ifWhite(x2, y2)){replase(x1, y1, x2, y2); return;}
+		}
+
+	}
+	else if(brd[x1][y1] == Piece::BishopB)
+	{
+		if(abs(x1 - x2) == abs(y1 - y2))
+		{
+			int xI = (x2-x1) / (abs(x2-x1));
+			int yI = (y2-y1) / (abs(y2-y1));
+			cout <<xI <<"\t--\t" <<yI <<" " <<abs(x1 - x2) <<"\t--\t" <<abs(y1 - y2) <<endl;
+			int i;
+			for (i = 1; i <= abs(x1 - x2); i++)
+			{
+
+				if (brd[x1 + xI*i][y1 + yI*i]!=Piece::Free) break;
+				if (brd[x1 + xI*i][y1 + yI*i]==Piece::Free && i==abs(x1-x2)){replase(x1, y1, x2, y2); return;} //free space
+			}
+			if(brd[x1 + xI*i][y1 + yI*i]!=Piece::Free && i==abs(x1-x2) && ifWhite(x2, y2)){replase(x1, y1, x2, y2); return;}
 		}
 	}
-	else if (brd[x1][y1] == Piece::RookW)
+	else if(brd[x1][y1] == Piece::RookW)
 	{
-		if (x1!=x2 || y1!=y2)
+		if(x1!=x2 || y1!=y2)
 		{
 
-			if (x1 == x2)
+			if(x1 == x2)
 			{
 				int yI = (y2-y1) / (abs(y2-y1));
 				for (int i = y1+yI; i!=y2; i+=yI)
 				{
 
-					if (brd[x2][i] != Piece::Free)
+					if(brd[x2][i] != Piece::Free)
 						return ;
 
 				}
 				if(!ifWhite(x2,y2)) replase(x1, y1, x2, y2);
 			}
 			else
-				if (y1 == y2)
+				if(y1 == y2)
 				{
 
 					int xI = (x2-x1) / (abs(x2-x1));
 					for (int i = x1+xI; i!=x2; i+=xI)
 					{
-						if (brd[i][y2] != Piece::Free)
+						if(brd[i][y2] != Piece::Free)
 							return;
 					}
 					if(!ifWhite(x2,y2)) replase(x1, y1, x2, y2);
 				}
 		}
 	}
-	else if (brd[x1][y1] == Piece::RookB)
+	else if(brd[x1][y1] == Piece::RookB)
 	{
-		if (x1!=x2 || y1!=y2)
+		if(x1!=x2 || y1!=y2)
 		{
 
-			if (x1 == x2)
+			if(x1 == x2)
 			{
 				int yI = (y2-y1) / (abs(y2-y1));
 				cout <<yI <<endl;
 				for (int i = y1+yI; i!=y2; i+=yI)
 				{
 
-					if (brd[x2][i] != Piece::Free)
+					if(brd[x2][i] != Piece::Free)
 						return ;
 
 				}
@@ -411,19 +403,143 @@ void Board::move(int x1, int y1, int x2, int y2)
 				}
 		}
 	}
+	else if(brd[x1][y1] == Piece::QueenW)
+	{
+		if (x1!=x2 || y1!=y2)
+		{
+
+			if (x1 == x2)
+			{
+				int yI = (y2-y1) / (abs(y2-y1));
+				cout <<yI <<endl;
+				for (int i = y1+yI; i!=y2; i+=yI)
+				{
+
+					if (brd[x2][i] != Piece::Free)
+						return ;
+
+				}
+				if(!ifWhite(x2, y2)||brd[x2][y2] == Piece::Free) replase(x1, y1, x2, y2);
+			}
+			else
+				if(y1 == y2)
+				{
+
+					int xI = (x2-x1) / (abs(x2-x1));
+					for (int i = x1+xI; i!=x2; i+=xI)
+					{
+						if(brd[i][y2] != Piece::Free)
+							return;
+					}
+					if(!ifWhite(x2, y2)||brd[x2][y2] == Piece::Free) replase(x1, y1, x2, y2);
+				}
+		}
+		if(abs(x1 - x2) == abs(y1 - y2))
+		{
+			int xI = (x2-x1) / (abs(x2-x1));
+			int yI = (y2-y1) / (abs(y2-y1));
+			cout <<xI <<"\t--\t" <<yI <<" " <<abs(x1 - x2) <<"\t--\t" <<abs(y1 - y2) <<endl;
+			int i;
+			for (i = 1; i <= abs(x1 - x2); i++)
+			{
+
+				if(brd[x1 + xI*i][y1 + yI*i]!=Piece::Free) break;
+				if(brd[x1 + xI*i][y1 + yI*i]==Piece::Free && i==abs(x1-x2)){replase(x1, y1, x2, y2); return;} //free space
+			}
+			if(brd[x1 + xI*i][y1 + yI*i]!=Piece::Free && i==abs(x1-x2) && !ifWhite(x2, y2)){replase(x1, y1, x2, y2); return;}
+		}
+	}
+	else if(brd[x1][y1] == Piece::QueenB)
+	{
+		if(x1!=x2 || y1!=y2)
+		{
+
+			if(x1 == x2)
+			{
+				int yI = (y2-y1) / (abs(y2-y1));
+				cout <<yI <<endl;
+				for (int i = y1+yI; i!=y2; i+=yI)
+				{
+
+					if(brd[x2][i] != Piece::Free)
+						return ;
+
+				}
+				if(ifWhite(x2, y2)||brd[x2][y2] == Piece::Free) replase(x1, y1, x2, y2);
+			}
+			else
+				if(y1 == y2)
+				{
+
+					int xI = (x2-x1) / (abs(x2-x1));
+					for (int i = x1+xI; i!=x2; i+=xI)
+					{
+						if (brd[i][y2] != Piece::Free)
+							return;
+					}
+					if(ifWhite(x2, y2)||brd[x2][y2] == Piece::Free) replase(x1, y1, x2, y2);
+				}
+		}
+		if(abs(x1 - x2) == abs(y1 - y2))
+		{
+			int xI = (x2-x1) / (abs(x2-x1));
+			int yI = (y2-y1) / (abs(y2-y1));
+			cout <<xI <<"\t--\t" <<yI <<" " <<abs(x1 - x2) <<"\t--\t" <<abs(y1 - y2) <<endl;
+			int i;
+			for (i = 1; i <= abs(x1 - x2); i++)
+			{
+
+				if(brd[x1 + xI*i][y1 + yI*i]!=Piece::Free) break;
+				if(brd[x1 + xI*i][y1 + yI*i]==Piece::Free && i==abs(x1-x2)){replase(x1, y1, x2, y2); return;} //free space
+			}
+			if(brd[x1 + xI*i][y1 + yI*i]!=Piece::Free && i==abs(x1-x2) && ifWhite(x2, y2)){replase(x1, y1, x2, y2); return;}
+		}
+	}
+	else if(brd[x1][y1] == Piece::KingW)
+	{
+		if((abs(x2-x1)==1||abs(y2-y1)==1) && (!ifWhite(x2, y2)||brd[x2][y2]==Piece::Free))
+		{
+			if(abs(x2-x1)==1&&abs(y2-y1)==1)
+				replase(x1, y1, x2, y2);
+			else if((abs(y2-y1)==1&&!abs(x2-x1))||(abs(x2-x1)==1&&!abs(y2-y1)))
+				replase(x1, y1, x2, y2);
+		}
+	}
+	else if(brd[x1][y1] == Piece::KingB)
+	{
+		if((abs(x2-x1)==1||abs(y2-y1)==1) && (ifWhite(x2, y2)||brd[x2][y2]==Piece::Free))
+		{
+			if(abs(x2-x1)==1&&abs(y2-y1)==1)
+				replase(x1, y1, x2, y2);
+			else if((abs(y2-y1)==1&&!abs(x2-x1))||(abs(x2-x1)==1&&!abs(y2-y1)))
+				replase(x1, y1, x2, y2);
+		}
+	}
 	cout <<"zzzzzzzzz:\t" <<x1 <<" -- " <<y1 <<"\t" <<x2 <<" -- " <<y2 <<endl;
 }
 
 void Board::replase(int x1, int y1, int x2, int y2)
 {
-	brd[x2][y2]=brd[x1][y1];
-	brd[x1][y1]=Piece::Free;
-	changed = true;
+	if(brd[x2][y2]==Piece::KingW||brd[x2][y2]==Piece::KingB)
+		Check = 1;
+//	else if(brd[x1][y1]==Piece::KingW || brd[x1][y1]==Piece::KingB)return;
+	else
+	{
+		if(brd[x1][y1]==Piece::PawnW && y2==0)
+			brd[x2][y2]=Piece::QueenW;
+		else if(brd[x1][y1]==Piece::PawnB && y2==7)
+			brd[x2][y2]=Piece::QueenB;
+		else
+			brd[x2][y2]=brd[x1][y1];
+
+		brd[x1][y1]=Piece::Free;
+		changed = true;
+	}
 }
 
 bool Board::ifWhite(int x, int y)
 {
-	return	brd[x][y] == Piece::PawnW ||
+	return	brd[x][y] == Piece::PawnW||
 			brd[x][y] == Piece::BishopW||
 			brd[x][y] == Piece::QueenW||
 			brd[x][y] == Piece::KnightW||
