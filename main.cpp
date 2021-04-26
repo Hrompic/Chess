@@ -26,8 +26,10 @@ class Board
 	void move(int, int, int, int);
 	void replase(int, int, int, int);
 	bool ifWhite(int, int);
+	int whereIs(Piece);
 	int changed;
 	bool Check;
+	bool wMove;
 public:
 	Board(RenderWindow *);
 	~Board();
@@ -71,7 +73,8 @@ int main()
 
 Board::Board(RenderWindow *_wnd):
 	wnd(_wnd),
-	changed(true)
+	changed(true),
+	wMove(true)
 {
 
 	_board.loadFromFile("images/Chess_Board_Stone.png");
@@ -132,6 +135,7 @@ void Board::draw()
 	{
 		//wnd->clear(Color::Black);
 		wnd->draw(board);
+		if(Check) cout <<"Check" <<endl;
 		for(int i=0; i<8; i++)
 			for(int j=0; j<8; j++)
 			switch (brd[i][j])
@@ -246,6 +250,7 @@ void Board::event()
 
 }
 
+
 bool Board::setPosition(int x, int y)
 {
 //	cout <<x <<" -- " <<y <<endl;
@@ -266,7 +271,8 @@ bool Board::setPosition(int x, int y)
 
 void Board::move(int x1, int y1, int x2, int y2)
 {
-	if(brd[x1][y1] == Piece::PawnW)
+	if(brd[x1][y1] == Piece::Free) return;
+	else if(brd[x1][y1] == Piece::PawnW)
 	{
 		if(brd[x2][y2]==Piece::Free)
 		{
@@ -504,6 +510,13 @@ void Board::move(int x1, int y1, int x2, int y2)
 			else if((abs(y2-y1)==1&&!abs(x2-x1))||(abs(x2-x1)==1&&!abs(y2-y1)))
 				replase(x1, y1, x2, y2);
 		}
+		else if (brd[x2][y2]==Piece::RookW&&brd[0][7]==Piece::RookW&&brd[7][7]==Piece::RookW&&wMove)
+		{
+			brd[x2][y2]=Piece::KingW;
+			brd[x1][y1]=Piece::RookW;
+			changed = true;
+			wMove = !wMove;
+		}
 	}
 	else if(brd[x1][y1] == Piece::KingB)
 	{
@@ -514,16 +527,26 @@ void Board::move(int x1, int y1, int x2, int y2)
 			else if((abs(y2-y1)==1&&!abs(x2-x1))||(abs(x2-x1)==1&&!abs(y2-y1)))
 				replase(x1, y1, x2, y2);
 		}
+		else if (brd[x2][y2]==Piece::RookB&&brd[0][0]==Piece::RookB&&brd[7][0]==Piece::RookB&&!wMove)
+		{
+			brd[x2][y2]=Piece::KingB;
+			brd[x1][y1]=Piece::RookB;
+			changed = true;
+			wMove = !wMove;
+		}
 	}
 	cout <<"zzzzzzzzz:\t" <<x1 <<" -- " <<y1 <<"\t" <<x2 <<" -- " <<y2 <<endl;
 }
 
 void Board::replase(int x1, int y1, int x2, int y2)
 {
+	static bool checkC;
 	if(brd[x2][y2]==Piece::KingW||brd[x2][y2]==Piece::KingB)
 		Check = 1;
+	if((!wMove && ifWhite(x1, y1)) || (wMove && !ifWhite(x1, y1))) return;
+
 //	else if(brd[x1][y1]==Piece::KingW || brd[x1][y1]==Piece::KingB)return;
-	else
+	else if(!checkC)
 	{
 		if(brd[x1][y1]==Piece::PawnW && y2==0)
 			brd[x2][y2]=Piece::QueenW;
@@ -533,8 +556,21 @@ void Board::replase(int x1, int y1, int x2, int y2)
 			brd[x2][y2]=brd[x1][y1];
 
 		brd[x1][y1]=Piece::Free;
+		checkC = 1;
+		int pos = whereIs(!wMove ?Piece::KingW :Piece::KingB);
+		//Cheking Check
+		move(x2, y2, pos/8, pos%8);
+		pos = whereIs(!wMove ?Piece::KingB :Piece::KingW);
+			for(int i=0; i<8; i++) for(int j=0; j<8; j++)
+					if(!wMove ?ifWhite(i, j) :!ifWhite(i, j)) move(i, j, pos/8, pos%8);
+		//******//
+		checkC = 0;
 		changed = true;
+		wMove = !wMove;
+
 	}
+	else Check = true;
+
 }
 
 bool Board::ifWhite(int x, int y)
@@ -545,4 +581,15 @@ bool Board::ifWhite(int x, int y)
 			brd[x][y] == Piece::KnightW||
 			brd[x][y] == Piece::KingW||
 			brd[x][y] == Piece::RookW;
+}
+
+int Board::whereIs(Piece piece)
+{
+	for(int i=0; i<8; i++)
+		for(int j=0; j<8; j++)
+		{
+			if(brd[i][j]==piece)
+				return i*8+j;
+		}
+	return -1;
 }
