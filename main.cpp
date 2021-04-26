@@ -543,33 +543,50 @@ void Board::replase(int x1, int y1, int x2, int y2)
 	static bool checkC;
 	if(brd[x2][y2]==Piece::KingW||brd[x2][y2]==Piece::KingB)
 		Check = 1;
-	if((!wMove && ifWhite(x1, y1)) || (wMove && !ifWhite(x1, y1))) return;
+	else if((!wMove && ifWhite(x1, y1)) || (wMove && !ifWhite(x1, y1))) return;
 
 //	else if(brd[x1][y1]==Piece::KingW || brd[x1][y1]==Piece::KingB)return;
+
 	else if(!checkC)
 	{
+
+		Piece tmp[2];
+		tmp[0]= brd[x1][y1];
+		tmp[1]= brd[x2][y2];
+
 		if(brd[x1][y1]==Piece::PawnW && y2==0)
 			brd[x2][y2]=Piece::QueenW;
 		else if(brd[x1][y1]==Piece::PawnB && y2==7)
 			brd[x2][y2]=Piece::QueenB;
 		else
 			brd[x2][y2]=brd[x1][y1];
-
 		brd[x1][y1]=Piece::Free;
+
 		checkC = 1;
-		int pos = whereIs(!wMove ?Piece::KingW :Piece::KingB);
+
+		int pos = whereIs(!wMove ?Piece::KingB :Piece::KingW);
+
+		for(int i=0; i<8; i++) for(int j=0; j<8; j++)
+			if(!wMove ?ifWhite(i, j) :!ifWhite(i, j)) move(i, j, pos/8, pos%8);
+		//******//
+		if(Check)
+		{
+			brd[x1][y1] = tmp[0];
+			brd[x2][y2] = tmp[1];
+			Check = false;
+			checkC = false;
+			return;
+		}
+
+		pos = whereIs(!wMove ?Piece::KingW :Piece::KingB);
 		//Cheking Check
 		move(x2, y2, pos/8, pos%8);
-		pos = whereIs(!wMove ?Piece::KingB :Piece::KingW);
-			for(int i=0; i<8; i++) for(int j=0; j<8; j++)
-					if(!wMove ?ifWhite(i, j) :!ifWhite(i, j)) move(i, j, pos/8, pos%8);
-		//******//
 		checkC = 0;
 		changed = true;
 		wMove = !wMove;
 
 	}
-	else Check = true;
+	else Check = false;
 
 }
 
