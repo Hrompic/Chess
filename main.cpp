@@ -71,7 +71,7 @@ int main()
 {
 	ContextSettings ctx;
 	ctx.antialiasingLevel = 16;
-	RenderWindow app(VideoMode(W, H), "Chess", Style::Close, ctx);
+	RenderWindow app(VideoMode(W, H), "Chess SFML", Style::Close, ctx);
 	app.setFramerateLimit(60);
 
 
