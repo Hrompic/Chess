@@ -33,8 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define W 680
 #define H 680
 #define BDR 20
-#define name(a) #a
-#define sPos(a, x, y) (##a.setPosition(x, y))
 using namespace std;
 using namespace sf;
 
@@ -85,8 +83,13 @@ int main()
 			if(event.type == Event::Closed)
 				app.close();
 			if(event.type == Event::KeyPressed)
+			{
 				if(event.key.code == Keyboard::Q)
 					app.close();
+				else if(event.key.code == Keyboard::N)
+					brd.init();
+
+			}
 		}
 
 		brd.draw();
@@ -94,7 +97,6 @@ int main()
 
 		app.display();
 	}
-	cout <<name(BishopW);
 	return 0;
 }
 
@@ -225,6 +227,9 @@ void Board::draw()
 
 void Board::init()
 {
+	wMove=true;
+	changed=true;
+	Check=false;
 	memset(brd, 0, sizeof(brd));
 	for(int i=0; i<8; i++)
 	{
