@@ -1,8 +1,36 @@
-//Hrompic 2021
+//Chess SFML Copyright (C) 2021  Hrompic
+/*
+ * This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+(Это свободная программа: вы можете перераспространять ее и/или изменять
+ее на условиях Стандартной общественной лицензии GNU в том виде, в каком
+она была опубликована Фондом свободного программного обеспечения; либо
+версии 3 лицензии, либо (по вашему выбору) любой более поздней версии.
+
+Эта программа распространяется в надежде, что она будет полезной,
+но БЕЗО ВСЯКИХ ГАРАНТИЙ; даже без неявной гарантии ТОВАРНОГО ВИДА
+или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Подробнее см. в Стандартной
+общественной лицензии GNU.
+
+Вы должны были получить копию Стандартной общественной лицензии GNU
+вместе с этой программой. Если это не так, см.
+<https://www.gnu.org/licenses/>.)
+*/
 #include <iostream>
 #include <cstring>
 #include <SFML/Graphics.hpp>
-#define W 920
+#define W 680
 #define H 680
 #define BDR 20
 #define name(a) #a
@@ -540,14 +568,13 @@ void Board::move(int x1, int y1, int x2, int y2)
 
 void Board::replase(int x1, int y1, int x2, int y2)
 {
-	static bool checkC;
 	if(brd[x2][y2]==Piece::KingW||brd[x2][y2]==Piece::KingB)
 		Check = 1;
 	else if((!wMove && ifWhite(x1, y1)) || (wMove && !ifWhite(x1, y1))) return;
 
 //	else if(brd[x1][y1]==Piece::KingW || brd[x1][y1]==Piece::KingB)return;
 
-	else if(!checkC)
+	else
 	{
 
 		Piece tmp[2];
@@ -562,31 +589,39 @@ void Board::replase(int x1, int y1, int x2, int y2)
 			brd[x2][y2]=brd[x1][y1];
 		brd[x1][y1]=Piece::Free;
 
-		checkC = 1;
+		int pos;
 
-		int pos = whereIs(!wMove ?Piece::KingB :Piece::KingW);
 
-		for(int i=0; i<8; i++) for(int j=0; j<8; j++)
-			if(!wMove ?ifWhite(i, j) :!ifWhite(i, j)) move(i, j, pos/8, pos%8);
-		//******//
-		if(Check)
+		pos = whereIs(!wMove ?Piece::KingB :Piece::KingW);
+
+		if(!Check)
 		{
-			brd[x1][y1] = tmp[0];
-			brd[x2][y2] = tmp[1];
-			Check = false;
-			checkC = false;
-			return;
+			for(int i=0; i<8; i++) for(int j=0; j<8; j++)
+				if(!wMove ?ifWhite(i, j) :!ifWhite(i, j)) move(i, j, pos/8, pos%8);
+			if(Check)
+			{
+				brd[x1][y1] = tmp[0];
+				brd[x2][y2] = tmp[1];
+				Check = false;
+				return;
+			}
 		}
+		else
+		{
+			pos = whereIs(!wMove ?Piece::KingW :Piece::KingB);
+			//Cheking Check
+			move(x2, y2, pos/8, pos%8);
+			Check = 0;
+			for(int i=0; i<8; i++) for(int j=0; j<8; j++)
+				if(!wMove ?ifWhite(i, j) :!ifWhite(i, j)) move(i, j, pos/8, pos%8);
+			if(Check) Check=1;
 
-		pos = whereIs(!wMove ?Piece::KingW :Piece::KingB);
-		//Cheking Check
-		move(x2, y2, pos/8, pos%8);
-		checkC = 0;
+
+		}
 		changed = true;
 		wMove = !wMove;
 
 	}
-	else Check = false;
 
 }
 
